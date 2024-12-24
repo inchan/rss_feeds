@@ -7,7 +7,6 @@ Packages
 xcuserdata
 DerivedData/
 *.xcodeproj
-Feeds/*
 
 
 # End of https://www.toptal.com/developers/gitignore/api/swiftpackagemanager
