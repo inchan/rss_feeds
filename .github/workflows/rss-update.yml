@@ -1,6 +1,8 @@
 name: RSS Feed Updater
 
 on:
+  push:
+    branches: [ "master" ]
   schedule:
     - cron: '0 */2 * * *'  # 2시간마다 실행
   workflow_dispatch:       # 수동 실행 옵션
@@ -12,9 +14,6 @@ jobs:
     steps:
     - name: 리포지토리 체크아웃
       uses: actions/checkout@v3
-
-    - name: Swift 설치
-      run: sudo apt-get install -y swift
 
     - name: RSS 업데이트 실행
       run: swift run
