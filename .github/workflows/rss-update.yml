@@ -15,12 +15,6 @@ jobs:
     - name: 리포지토리 체크아웃
       uses: actions/checkout@v3
 
-    - name: 최신 Swift 6 설치
-      run: |
-        brew install swift
-        sudo xcode-select -switch /Applications/Xcode.app
-        swift --version
-
     - name: RSS 업데이트 실행
       run: swift run
 
