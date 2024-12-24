@@ -1,73 +1,13 @@
-# temporary folders
+# Created by https://www.toptal.com/developers/gitignore/api/swiftpackagemanager
+# Edit at https://www.toptal.com/developers/gitignore?templates=swiftpackagemanager
 
-_temporaryWorkingFolder
-tmp
-
-# xcode
-
-IDEWorkspaceChecks.plist
-
-# cocoapods
-
-Podfile.lock
-Pods/Pods.xcodeproj/project.pbxproj
-
-Pods/*
-!Pods/Pods.xcodeproj
-!Pods/Pods.xcodeproj/project.pbxproj
-!Pods/Headers
-!Pods/Manifest.lock
-Pods/Pods.xcodeproj/xcuserdata
-
-# cocoapods - engine kit
-
-HD4EngineKit/Podfile.lock
-HD4EngineKit/Pods/Pods.xcodeproj/project.pbxproj
-
-HD4EngineKit/Pods/*
-!HD4EngineKit/Pods/Pods.xcodeproj
-!HD4EngineKit/Pods/Headers
-HD4EngineKit/Pods/Pods.xcodeproj/xcuserdata
-
-# would be moved or will be deprecated
+### SwiftPackageManager ###
+Packages
+.build/
+xcuserdata
+DerivedData/
+*.xcodeproj
+Feeds/*
 
 
-# other projects
-app.dSYM
-callStackText.txt
-
-# xcuserdata
-
-HD4.xcodeproj/project.xcworkspace/xcuserdata
-HD4.xcodeproj/xcuserdata
-HD4.xcworkspace/xcuserdata
-
-IXInitialConfigurator/IXInitialConfigurator.xcodeproj/project.xcworkspace/xcuserdata
-IXInitialConfigurator/IXInitialConfigurator.xcodeproj/xcuserdata
-IXExternalStaicLibraryStaticHolder/IXExternalStaicLibraryStaticHolder.xcodeproj/project.xcworkspace/xcuserdata
-IXExternalStaicLibraryStaticHolder/IXExternalStaicLibraryStaticHolder.xcodeproj/xcuserdata
-IXExternalFrameworksHolder/IXExternalFrameworksHolder.xcodeproj/project.xcworkspace/xcuserdata
-IXExternalFrameworksHolder/IXExternalFrameworksHolder.xcodeproj/xcuserdata
-
-IXCallStackAnalyzer/IXCallStackAnalyzer.xcodeproj/xcuserdata
-
-Okestra.xcworkspace/xcuserdata/
-Okestra.xcodeproj/project.xcworkspace/xcuserdata/
-Okestra.xcodeproj/xcuserdata/
-
-Libraries/CoreExchangeSync/CoreExchangeSync.xcodeproj/xcuserdata
-Libraries/ExchangeSync/ExchangeSync.xcodeproj/xcuserdata
-Libraries/EWSSync/EWSSync.xcodeproj/xcuserdata
-Libraries/IXFoundation/IXFoundation.xcodeproj/xcuserdata
-Libraries/IXUIKit/IXUIKit.xcodeproj/xcuserdata
-Libraries/IXExternalStaicLibraryStaticHolder/IXExternalStaicLibraryStaticHolder.xcodeproj/xcuserdata
-Tools/IXCallStackAnalyzer/IXCallStackAnalyzer.xcodeproj/xcuserdata
-Pods/Pods.xcodeproj
-Manifest.lock
-Libraries/CalDav/CalDav.xcodeproj/xcuserdata/seokmin.xcuserdatad/xcschemes/xcschememanagement.plist
-Libraries/ReworkService/ReworkService.xcodeproj/xcuserdata/seokmin.xcuserdatad/xcschemes/xcschememanagement.plist
-Libraries/ReworkService/ReworkService.xcodeproj/xcuserdata
-xcschememanagement.plist
-RMStore.strings
-vendor/*
-.bundle/config
+# End of https://www.toptal.com/developers/gitignore/api/swiftpackagemanager
