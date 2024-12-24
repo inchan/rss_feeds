@@ -18,7 +18,7 @@ jobs:
     - name: RSS 업데이트 실행
       run: swift run
 
-    - name: README.md 업데이트 (XML 파일 목록)
+ - name: README.md 업데이트 (XML 파일 목록)
       run: |
         echo "# RSS Feed List" > README.md
         echo "" >> README.md
@@ -30,12 +30,12 @@ jobs:
         # Feeds 디렉터리에서 XML 파일 리스트업 (GitHub Pages URL)
         BASE_URL="https://inchan.github.io/RssFeeds"
         for file in Feeds/*.xml; do
-          filename=$(basename "$file")
-          echo "- [${filename}](${BASE_URL}/Feeds/${filename})" >> README.md
+          # UTF-8 인코딩 없이 파일명 그대로 사용
+          echo "- [$(basename "$file")](${BASE_URL}/$file)" >> README.md
         done
         
         cat README.md
-
+        
     - name: Deploy
       run: |
         git config --global user.name "GitHub Actions"
