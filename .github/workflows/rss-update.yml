@@ -50,7 +50,7 @@ jobs:
         fi
         
         # Feeds 디렉터리 커밋
-        git add Feeds/*
+        git add Feeds/* README.md
         
         if [ -n "$(git diff --cached)" ]; then
           git commit -m "🤖 RSS Feed 업데이트 (자동 커밋)"
