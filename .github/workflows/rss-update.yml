@@ -23,13 +23,20 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         
-        git checkout publish || git checkout -b publish
-        git merge main --allow-unrelated-histories || echo "이미 병합됨"
+        # publish 브랜치 체크아웃 (없으면 생성)
+        if git show-ref --verify --quiet refs/heads/publish; then
+          git checkout publish
+        else
+          git checkout --orphan publish
+          git rm -rf .
+        fi
+        
+        # Feeds 디렉터리 커밋
         git add Feeds/*
         
         if [ -n "$(git diff --cached)" ]; then
           git commit -m "🤖 RSS Feed 업데이트 (자동 커밋)"
-          git push origin publish
+          git push --force origin publish  # 강제로 푸시
         else
           echo "변경 사항 없음"
         fi
