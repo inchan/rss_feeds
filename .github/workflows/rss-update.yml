@@ -40,7 +40,16 @@ jobs:
         
         cat README.md
 
-    - name: publish 브랜치로 README.md 및 변경된 파일 푸시
+    - name: Feeds/ 하위 파일 루트로 복사
+      run: |
+        # 루트 디렉터리에 Feeds 하위 파일 복사
+        for file in Feeds/*; do
+          cp "$file" "./$(basename $file)"
+        done
+        
+        ls -l
+
+    - name: publish 브랜치로 루트 파일 및 README.md 푸시
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
@@ -54,10 +63,9 @@ jobs:
           git rm -rf .
         fi
         
-        # Feeds 제외하고 루트의 변경 파일만 스테이징
-        git add .  # 모든 파일 추가
-        git reset Feeds/*  # Feeds/ 디렉터리는 제외
-
+        # 루트 디렉터리에 복사된 Feeds 하위 파일만 커밋
+        git add *.xml README.md
+        
         if [ -n "$(git diff --cached)" ]; then
           git commit -m "🤖 RSS Feed 및 README.md 업데이트 (자동 커밋)"
           git push origin publish
