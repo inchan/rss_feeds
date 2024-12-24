@@ -24,15 +24,18 @@ jobs:
     - name: RSS 업데이트 실행
       run: swift run
 
-    - name: 변경 사항 커밋
+    - name: Deploy
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         
-        git add Feeds/*  # Feeds 디렉터리의 모든 파일을 스테이징
+        git checkout publish || git checkout -b publish
+        git merge main --no-commit --no-ff
+        git add Feeds/*
+        
         if [ -n "$(git diff --cached)" ]; then
           git commit -m "🤖 RSS Feed 업데이트 (자동 커밋)"
-          git push
+          git push origin publish
         else
           echo "변경 사항 없음"
         fi

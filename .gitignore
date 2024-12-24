@@ -10,3 +10,4 @@ DerivedData/
 
 
 # End of https://www.toptal.com/developers/gitignore/api/swiftpackagemanager
+.swiftpm/xcode/package.xcworkspace/xcuserdata/inchan.xcuserdatad/UserInterfaceState.xcuserstate
