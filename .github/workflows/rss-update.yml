@@ -55,10 +55,15 @@ jobs:
           git rm -rf .
         fi
         
-        # Feeds 하위 파일을 루트로 복사
-        for file in Feeds/*; do
-          cp "$file" "./$(basename $file)"
-        done
+        if [ -d "Feeds" ]; then
+        # Feeds 하위 파일을 현재 디렉터리(루트)로 복사
+            for file in Feeds/*; do
+                cp "$file" "./$(basename "$file")"
+                echo "Copied $file"
+            done
+        else
+            echo "'Feeds' folder does not exist. Skipping copy."
+        fi
         
         git add *.xml README.md
         
