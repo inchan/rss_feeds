@@ -16,7 +16,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: RSS 업데이트 실행
-      run: swift build
+      run: swift run
 
     - name: README.md 업데이트 (XML 파일 목록 및 빌드 시간)
       run: |
