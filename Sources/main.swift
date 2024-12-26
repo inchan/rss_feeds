@@ -7,21 +7,53 @@
 
 import Foundation
 
-let quries = [
-    "광진구 개발",
-    "중곡동 개발",
-    "중곡역 개발",
-    "중곡동 재개발",
-    "중곡역 재개발"
+struct KeywordGroup {
+    let name: String
+    let keywords: [String]
+    
+    init(name: String, keywords: [String] = []) {
+        self.name = name
+        if (keywords.isEmpty) {
+            self.keywords = [name]
+        }
+        else {
+            self.keywords = keywords
+        }
+    }
+}
+
+let keywordGroups: [KeywordGroup] = [
+    KeywordGroup(name: "중곡개발", keywords: [
+        "중곡3동 개발",
+        "중곡3동 재개발",
+        "중곡역 개발",
+        "중곡역 재개발"
+    ]),
+    KeywordGroup(name: "초전도체", keywords: [
+        "초전도체",
+        "LK-99",
+        "신성델타테크",
+        "퀸텀에너지연구소"
+    ]),
+    KeywordGroup(name: "돈나무언니", keywords: [
+        "Catherine Wood",
+        "캐서린 우드",
+        "캐시 우드",
+        "cash wood",
+    ]),
+    KeywordGroup(name: "3기신도시")
 ]
 
-for query in quries {
-    print("query: \(query)\n")
+let quries = keywordGroups.map({ $0.keywords }).flatMap({ $0 })
 
-    let searchQuries = query.toSearchQuries
-    let old = try XMLLoader(key: query).fromLocalFile()
+for keywordGroup in keywordGroups {
+    let searchQuries =  keywordGroup.keywords.map{ $0.toSearchQuries }.flatMap{ $0 }
+    print("group name: \(keywordGroup.name)\n")
+    print("-> Keywords : \n\(searchQuries)")
+
+    let old = try XMLLoader(key: keywordGroup.name).fromLocalFile()
     if let old = old {
-        print("old: \(old)\n")
+        print("old \(old.title): items: \(old.feeds.count)\n")
     }
 
     let engines = searchQuries.map { [NaverSearch(query: $0)] }.flatMap{ $0 }
@@ -65,7 +97,7 @@ for query in quries {
         }
 
     if let merged = merged {
-        let publisher = XMLPublisher(rssFeed: merged, key: query)
+        let publisher = XMLPublisher(rssFeed: merged, key: keywordGroup.name)
         do {
             try publisher.publish()
         }
