@@ -4,8 +4,8 @@ on:
   push:
     branches: [ "master" ]
   schedule:
-    - cron: '0 7-23/2 * * *'  # 7시부터 23시까지 2시간마다 실행
-  workflow_dispatch:       # 수동 실행 옵션
+    - cron: '0 7-23/2 * * *'    # 7시부터 23시까지 2시간마다 실행
+  workflow_dispatch:            # 수동 실행 옵션
 
 jobs:
   update-and-commit:
@@ -30,7 +30,8 @@ jobs:
         # Feeds 디렉터리에서 XML 파일 리스트업 (GitHub Pages URL)
         BASE_URL="https://inchan.github.io/RssFeeds"
         for file in Feeds/*.xml; do
-          echo "- [$(basename "$file")](${BASE_URL}/$file)" >> README.md
+            filename=$(basename "$file")  # 파일 이름만 추출 (Feeds/ 제거)
+            echo "- [$filename](${BASE_URL}/$filename)" >> README.md
         done
         
         # 마지막 빌드 시간 추가
