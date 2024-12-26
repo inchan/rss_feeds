@@ -61,6 +61,7 @@ for keywordGroup in keywordGroups {
     let fetched = await engines.asyncMap { engine -> Result<RssFeed, Error> in
         do {
             let fetched = try await engine.fetch()
+            print("fetched feeds: \(fetched.feeds.count)")
             return Result.success(fetched)
         } catch {
             return Result.failure(error)
@@ -98,6 +99,8 @@ for keywordGroup in keywordGroups {
         }
 
     if let merged = merged {
+        print("\n")
+        print("\(keywordGroup.name) feeds: \(merged.feeds.count)")
         let publisher = XMLPublisher(rssFeed: merged, key: keywordGroup.name)
         do {
             try publisher.publish()
