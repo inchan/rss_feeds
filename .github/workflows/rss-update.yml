@@ -20,7 +20,7 @@ jobs:
 
     - name: README.md 업데이트 (XML 파일 목록 및 빌드 시간)
       run: |
-        echo "# RSS Feed List" > README.md
+        echo "# [RSS Feed List](https://inchan.github.io/RssFeeds/)" > README.md
         echo "" >> README.md
         echo "이 저장소는 RSS 피드를 자동으로 업데이트하고 관리합니다." >> README.md
         echo "" >> README.md
