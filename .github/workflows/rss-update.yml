@@ -61,15 +61,18 @@ jobs:
                 cp "$file" "./$(basename "$file")"
                 echo "Copied $file"
             done
+            
+            git add *.xml README.md
+        
+            if [ -n "$(git diff --cached)" ]; then
+                git commit -m "🤖 RSS Feed 및 README.md 업데이트 (자동 커밋)"
+                git push origin publish --force  # 강제 푸시
+            else
+                echo "변경 사항 없음"
+            fi
+            
         else
             echo "'Feeds' folder does not exist. Skipping copy."
         fi
         
-        git add *.xml README.md
         
-        if [ -n "$(git diff --cached)" ]; then
-          git commit -m "🤖 RSS Feed 및 README.md 업데이트 (자동 커밋)"
-          git push origin publish --force  # 강제 푸시
-        else
-          echo "변경 사항 없음"
-        fi
