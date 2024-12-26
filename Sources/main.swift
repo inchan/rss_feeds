@@ -23,25 +23,25 @@ struct KeywordGroup {
 }
 
 let keywordGroups: [KeywordGroup] = [
-    KeywordGroup(name: "중곡개발", keywords: [
-        "중곡3동 개발",
-        "중곡3동 재개발",
-        "중곡역 개발",
-        "중곡역 재개발"
-    ]),
-    KeywordGroup(name: "초전도체", keywords: [
-        "초전도체",
-        "LK-99",
-        "신성델타테크",
-        "퀸텀에너지연구소"
-    ]),
+//    KeywordGroup(name: "중곡개발", keywords: [
+//        "중곡3동 개발",
+//        "중곡3동 재개발",
+//        "중곡역 개발",
+//        "중곡역 재개발"
+//    ]),
+//    KeywordGroup(name: "초전도체", keywords: [
+//        "초전도체",
+//        "LK-99",
+//        "신성델타테크",
+//        "퀸텀에너지연구소"
+//    ]),
     KeywordGroup(name: "돈나무언니", keywords: [
         "Catherine Wood",
         "캐서린 우드",
         "캐시 우드",
         "cash wood",
     ]),
-    KeywordGroup(name: "3기신도시")
+//    KeywordGroup(name: "3기신도시")
 ]
 
 let quries = keywordGroups.map({ $0.keywords }).flatMap({ $0 })

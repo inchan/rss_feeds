@@ -40,15 +40,6 @@ jobs:
         
         cat README.md
 
-    - name: Feeds/ 하위 파일 루트로 복사
-      run: |
-        # 루트 디렉터리에 Feeds 하위 파일 복사
-        for file in Feeds/*; do
-          cp "$file" "./$(basename $file)"
-        done
-        
-        ls -l
-
     - name: publish 브랜치로 README.md 및 변경된 파일 푸시 (강제 덮어쓰기)
       run: |
         git config --global user.name "GitHub Actions"
