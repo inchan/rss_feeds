@@ -48,7 +48,8 @@ let quries = keywordGroups.map({ $0.keywords }).flatMap({ $0 })
 
 for keywordGroup in keywordGroups {
     let searchQuries =  keywordGroup.keywords.map{ $0.toSearchQuries }.flatMap{ $0 }
-    print("group name: \(keywordGroup.name)\n")
+    print("\n")
+    print("group name: \(keywordGroup.name)")
     print("-> Keywords : \n\(searchQuries)")
 
     let old = try XMLLoader(key: keywordGroup.name).fromLocalFile()

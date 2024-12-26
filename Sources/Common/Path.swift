@@ -10,9 +10,12 @@ import Foundation
 struct Path {
     static func writeDirPath() -> String {
 #if DEBUG
-        return (NSSearchPathForDirectoriesInDomains(.desktopDirectory, .userDomainMask, true)
+        let dir = (NSSearchPathForDirectoriesInDomains(.desktopDirectory, .userDomainMask, true)
             .first?.appending("/Publish")) ?? ""
+        print("writeDirPath: \(dir)")
+        return dir
 #else
+        print("writeDirPath: ./Feeds")
         return "./Feeds"
 #endif
     }
