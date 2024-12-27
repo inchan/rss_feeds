@@ -45,7 +45,6 @@ extension HTTPGetFetchable {
         request.cachePolicy = .reloadIgnoringLocalCacheData // 캐시 정책 설정
         request.timeoutInterval = 30
         request.allHTTPHeaderFields = ["Content-Type": "application/json"] // 헤더 설정
-        print("request: \(request)")
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
@@ -59,9 +58,18 @@ extension HTTPGetFetchable {
         }
         
         do {
-            return try decoder.decode(data: data)
+            let rssFeed = try decoder.decode(data: data)
+            successLog(request: request, rssFeed: rssFeed)
+            return rssFeed
         } catch {
             throw NetworkError.decodingError
+        }
+    }
+    
+    func successLog(request: URLRequest, rssFeed: RssFeed) {
+        if let url = request.url?.absoluteString {
+            let feedCount = String(format: "%02d", rssFeed.feeds.count)
+            print("[REQ] \(rssFeed.title) <\(feedCount)> -> \(url)")
         }
     }
 }

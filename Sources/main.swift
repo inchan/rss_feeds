@@ -44,49 +44,64 @@ let keywordGroups: [KeywordGroup] = [
     KeywordGroup(name: "3기신도시")
 ]
 
-let quries = keywordGroups.map({ $0.keywords }).flatMap({ $0 })
+// 비동기 처리용 함수
+func fetchFeeds(for keywordGroup: KeywordGroup) async {
+    let searchQueries = keywordGroup.keywords.flatMap { $0.toSearchQuries }
 
-for keywordGroup in keywordGroups {
-    let searchQuries =  keywordGroup.keywords.map{ $0.toSearchQuries }.flatMap{ $0 }
     print("\n")
     print("group name: \(keywordGroup.name)")
-    print("-> Keywords : \n\(searchQuries)")
+    print("-> Keywords : \n\(searchQueries)")
 
-    let old = try XMLLoader(key: keywordGroup.name).fromLocalFile()
-    if let old = old {
-        print("old \(old.title): items: \(old.feeds.count)\n")
-    }
+//    do {
+//        let old = try XMLLoader(key: keywordGroup.name).fromLocalFile()
+//        if let old = old {
+//            print("old \(old.title): items: \(old.feeds.count)\n")
+//        }
+//    } catch {
+//        print("Failed to load old XML: \(error)")
+//    }
 
-    let engines = searchQuries.map { [NaverSearch(query: $0)] }.flatMap{ $0 }
-    let fetched = await engines.asyncMap { engine -> Result<RssFeed, Error> in
-        do {
-            let fetched = try await engine.fetch()
-            print("fetched feeds: \(fetched.feeds.count)")
-            return Result.success(fetched)
-        } catch {
-            return Result.failure(error)
-        }
-    }
-
-    let feeds = fetched
-        .reduce([Feed]()) { partialResult, r in
-            switch r {
-            case .success(let rss): partialResult + rss.feeds
-            case .failure(_): partialResult
+    // 비동기 병렬 처리
+    let fetchedResults = await withTaskGroup(of: Result<RssFeed, Error>.self) { group in
+        for query in searchQueries {
+            group.addTask {
+                let engine = NaverSearch(query: query)
+                do {
+                    let fetched = try await engine.fetch()
+                    return .success(fetched)
+                } catch {
+                    return .failure(error)
+                }
             }
         }
+
+        var results: [Result<RssFeed, Error>] = []
+        for await result in group {
+            results.append(result)
+        }
+        return results
+    }
+
+    let feeds = fetchedResults
+        .compactMap { result in
+            switch result {
+            case .success(let rss): return rss.feeds
+            case .failure: return []
+            }
+        }
+        .flatMap { $0 }
         .distinct()
         .filterSimilar()
 
-    let merged = fetched
-        .compactMap { r in
-            switch r {
-            case .success(let rss): rss
-            case .failure(_): nil
+    let merged = fetchedResults
+        .compactMap { result in
+            switch result {
+            case .success(let rss): return rss
+            case .failure: return nil
             }
         }
         .first
-        .map{ rssFeed in
+        .map { rssFeed in
             RssFeed(
                 title: rssFeed.title,
                 desc: rssFeed.desc,
@@ -104,9 +119,35 @@ for keywordGroup in keywordGroups {
         let publisher = XMLPublisher(rssFeed: merged, key: keywordGroup.name)
         do {
             try publisher.publish()
-        }
-        catch {
+        } catch {
             print("publish error: \(error)")
         }
     }
 }
+
+let dispatchGroup = DispatchGroup()
+
+func fetchFeedsSync(for keywordGroup: KeywordGroup) {
+    dispatchGroup.enter()
+    Task {
+        await withCheckedContinuation { continuation in
+            Task {
+                await fetchFeeds(for: keywordGroup)
+                continuation.resume()  // 모든 작업 완료 후 그룹에서 나감
+            }
+        }
+        dispatchGroup.leave()  // 여기서 호출 (완전히 끝난 후)
+    }
+}
+
+for keywordGroup in keywordGroups {
+    fetchFeedsSync(for: keywordGroup)
+}
+
+// 모든 비동기 작업이 끝날 때까지 대기
+dispatchGroup.notify(queue: .main) {
+    print("All feeds fetched. Exiting program.")
+    exit(0)
+}
+
+RunLoop.main.run()
