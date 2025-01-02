@@ -89,11 +89,11 @@ extension HTTPGetFetchable {
     func successLog(request: URLRequest, rssFeed: RssFeed) {
         if let url = request.url?.absoluteString {
             let feedCount = String(format: "%02d", rssFeed.feeds.count)
-            var str = "[\(query)] <\(feedCount)>"
-            while str.count < (maxLength + 5) {
+            var str = "[\(query)]"
+            while str.count < (maxLength) {
                 str += " "
             }
-            str += ": \(url)"
+            str += ": \(url) -> \(feedCount) feeds"
             Log(str, tag: "🚀", depth: 1)
         }
     }

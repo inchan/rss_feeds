@@ -62,7 +62,7 @@ func fetchFeeds(for keywordGroup: KeywordGroup) {
         
         if index < searchQueries.count - 1 {
             // 2초 대기 (마지막 요청 제외)
-            Thread.sleep(forTimeInterval: 0.5)
+            Thread.sleep(forTimeInterval: 0.55)
         }
     }
     let feeds = extractFeeds(from: fetchedResults)
@@ -137,11 +137,12 @@ for keywordGroup in keywordGroups {
     fetchFeedsSync(for: keywordGroup)
 }
 
-// 모든 작업이 완료될 때까지 대기
 dispatchGroup.notify(queue: .main) {
     print("All feeds fetched. Exiting program.")
-    CFRunLoopStop(CFRunLoopGetMain())  // RunLoop 종료
+    RunLoop.main.perform {
+        exit(0)
+    }
 }
 
-// RunLoop 유지 (종료될 때까지 유지)
-CFRunLoopRun()
+// RunLoop 유지
+RunLoop.main.run()
