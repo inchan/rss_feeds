@@ -30,7 +30,7 @@ jobs:
         # Feeds 디렉터리에서 XML 파일 리스트업 (GitHub Pages URL)
         BASE_URL="https://inchan.github.io/RssFeeds"
         for file in Feeds/*.xml; do
-            filename=$(basename "$file")  # 파일 이름만 추출 (Feeds/ 제거)
+            filename=$(basename "$file")
             echo "- [$filename](${BASE_URL}/$filename)" >> README.md
         done
         
@@ -41,7 +41,7 @@ jobs:
         
         cat README.md
 
-    - name: publish 브랜치로 README.md 및 변경된 파일 푸시 (강제 덮어쓰기)
+    - name: publish 브랜치로 README.md 및 변경된 파일 푸시 (덮어쓰기)
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
@@ -49,30 +49,23 @@ jobs:
         # publish 브랜치 체크아웃 (없으면 생성)
         if git show-ref --verify --quiet refs/heads/publish; then
           git checkout publish
-          git reset --hard origin/main  # 리모트 publish 초기화
         else
-          git checkout --orphan publish
-          git rm -rf .
+          git checkout -b publish
         fi
         
+        # Feeds 디렉터리 파일을 현재 디렉터리로 덮어쓰기
         if [ -d "Feeds" ]; then
-        # Feeds 하위 파일을 현재 디렉터리(루트)로 복사
-            for file in Feeds/*; do
-                cp "$file" "./$(basename "$file")"
-                echo "Copied $file"
-            done
+            cp -r Feeds/* .  # 디렉터리 내 파일을 현재 디렉터리에 복사 (덮어쓰기)
             
             git add *.xml README.md
         
             if [ -n "$(git diff --cached)" ]; then
                 git commit -m "🤖 RSS Feed 및 README.md 업데이트 (자동 커밋)"
-                git push origin publish --force  # 강제 푸시
+                git push origin publish
             else
                 echo "변경 사항 없음"
             fi
             
         else
-            echo "'Feeds' folder does not exist. Skipping copy."
+            echo "'Feeds' 폴더가 존재하지 않습니다. 복사 작업을 건너뜁니다."
         fi
-        
-        
