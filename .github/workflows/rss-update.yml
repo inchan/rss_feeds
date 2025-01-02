@@ -42,12 +42,13 @@ jobs:
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-
-        # publish 브랜치 체크아웃 (없으면 생성)
+        
+        # publish 브랜치 존재 여부 확인 후 체크아웃 (없으면 종료)
         if git show-ref --verify --quiet refs/heads/publish; then
           git checkout publish
         else
-          git checkout -b publish
+          echo "publish 브랜치가 존재하지 않아 작업을 종료합니다."
+          exit 0
         fi
         
         # .git 디렉터리를 제외하고 모든 파일 삭제
