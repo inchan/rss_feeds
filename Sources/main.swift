@@ -119,15 +119,16 @@ private func publishFeedIfNeeded(_ rssFeed: RssFeed?, for keywordGroup: KeywordG
     } catch {
         Log("publish error: \(error)", tag: "❌")
     }
+    print("\n")
 }
 
 // 동기적으로 피드 가져오기 (DispatchGroup 사용)
 func fetchFeedsSync(for keywordGroup: KeywordGroup) {
     dispatchGroup.enter()
     dispatchQueue.sync {
-        print("will enter")
+        //print("will enter")
         fetchFeeds(for: keywordGroup)
-        print("will leave")
+        //print("will leave")
         dispatchGroup.leave()
     }
 }

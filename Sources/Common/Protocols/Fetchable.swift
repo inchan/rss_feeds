@@ -30,10 +30,10 @@ protocol HTTPGetFetchable: Fetchable {
 }
 
 extension HTTPGetFetchable {
-    var cachePolicy: URLRequest.CachePolicy { .reloadIgnoringLocalCacheData }
-    var timeoutInterval: TimeInterval { 10 }
+    var cachePolicy: NSURLRequest.CachePolicy { .reloadIgnoringLocalCacheData }
+    var timeoutInterval: TimeInterval { 30 }
     var httpMethod: String { "GET" }
-    var headers: [String: String] { [:] }
+    var headers: [String: String] { ["Content-Type": "application/json"] }
     var decoder: DataDecodable { JSONDataDecoder() }
     
     func fetch() throws -> RssFeed {
@@ -42,10 +42,10 @@ extension HTTPGetFetchable {
         }
         
         var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.cachePolicy = .reloadIgnoringLocalCacheData // 캐시 정책 설정
-        request.timeoutInterval = 30
-        request.allHTTPHeaderFields = ["Content-Type": "application/json"] // 헤더 설정
+        request.httpMethod = httpMethod
+        request.cachePolicy = cachePolicy
+        request.timeoutInterval = timeoutInterval
+        request.allHTTPHeaderFields = headers // 헤더 설정
         
         // 세마포어 생성 (초기값 0)
         let semaphore = DispatchSemaphore(value: 0)
@@ -63,7 +63,7 @@ extension HTTPGetFetchable {
         }.resume()
         
         // 요청이 완료될 때까지 대기 (최대 30초)
-        _ = semaphore.wait(timeout: .now() + 30)
+        _ = semaphore.wait(timeout: .now() + timeoutInterval + 1)
 
         guard error == nil else {
             throw NetworkError.invalidResponse
