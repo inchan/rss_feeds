@@ -61,7 +61,9 @@ jobs:
         
             if [ -n "$(git diff --cached)" ]; then
                 git commit -m "🤖 RSS Feed 및 README.md 업데이트 (자동 커밋)"
-                git push origin publish
+                
+                # 강제로 푸시 (충돌 방지)
+                git push origin publish --force
             else
                 echo "변경 사항 없음"
             fi
