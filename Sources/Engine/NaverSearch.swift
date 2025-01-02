@@ -9,7 +9,8 @@ import Foundation
 import SwiftSoup
 
 struct NaverSearch: Engine, HTTPGetFetchable {
-    let query: String
+    var query: String
+    var maxLength: Int
     let `where` = Query.Where.news
     let page = Query.Page.first
     let sort = Query.Sort.relevance
@@ -74,6 +75,5 @@ extension NaverSearch {
             
             var queryName: String { "pd" }
         }
-
     }
 }

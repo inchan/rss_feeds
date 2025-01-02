@@ -46,11 +46,16 @@ extension String {
     
     var toSearchQuries: [String] {
         let split = self.split(separator: " ")
-        var searchQuries = split.map { string in
-            split.map({ $0 == string ? "\"\($0)\"" : $0}).joined(separator: " ")
+        if (split.count > 1) {
+            var searchQuries = split.map { string in
+                split.map({ $0 == string ? "\"\($0)\"" : $0}).joined(separator: " ")
+            }
+            searchQuries.insert(self, at: 0)
+            return searchQuries
         }
-        searchQuries.insert(self, at: 0)
-        return searchQuries
+        else {
+            return [self]
+        }
     }
     
     var urlEncoded: String {

@@ -46,133 +46,102 @@ let keywordGroups: [KeywordGroup] = [
     KeywordGroup(name: "3기신도시")
 ]
 
-// 비동기 처리용 함수
-func fetchFeeds(for keywordGroup: KeywordGroup) async {
+let maxLength = keywordGroups.flatMap { $0.keywords }.map { $0.count }.max() ?? 0
+
+let dispatchQueue = DispatchQueue(label: "com.feed.fetchQueue")  // 직렬 큐 생성
+let dispatchGroup = DispatchGroup()
+
+// 피드 가져오기
+func fetchFeeds(for keywordGroup: KeywordGroup) {
     let searchQueries = keywordGroup.keywords.flatMap { $0.toSearchQuries }
-
-    logGroupInfo(keywordGroup, queries: searchQueries)
-
-    let fetchedResults = await fetchAllFeeds(for: searchQueries)
-
-    let feeds = await extractFeeds(from: fetchedResults)
-    let mergedFeed = await mergeFeeds(for: keywordGroup, with: feeds, from: fetchedResults)
-
-    await publishFeedIfNeeded(mergedFeed, for: keywordGroup)
-}
-
-// 그룹 정보 출력
-private func logGroupInfo(_ keywordGroup: KeywordGroup, queries: [String]) {
-    print("\n")
-    print("group name: \(keywordGroup.name)")
-    print("-> Keywords : \n\(queries)")
-}
-
-// 모든 피드를 병렬로 가져옴
-private func fetchAllFeeds(for queries: [String]) async -> [Result<RssFeed, Error>] {
-    await withTaskGroup(of: Result<RssFeed, Error>.self) { group in
-        for query in queries {
-            group.addTask { await fetchFeed(for: query) }
+    Log(keywordGroup.name, tag: "❤️‍🔥")
+    var fetchedResults: [Result<RssFeed, Error>] = []
+    for (index, query) in searchQueries.enumerated() {
+        let result = fetchFeed(for: query)
+        fetchedResults.append(result)
+        
+        if index < searchQueries.count - 1 {
+            // 2초 대기 (마지막 요청 제외)
+            Thread.sleep(forTimeInterval: 0.5)
         }
-        return await group.reduce(into: []) { $0.append($1) }
     }
+    let feeds = extractFeeds(from: fetchedResults)
+    let mergedFeed = mergeFeeds(for: keywordGroup, with: feeds, from: fetchedResults)
+    publishFeedIfNeeded(mergedFeed, for: keywordGroup)
 }
 
-// 개별 피드 가져오기
-private func fetchFeed(for query: String) async -> Result<RssFeed, Error> {
-    let engine = NaverSearch(query: query)
+// 개별 피드 가져오기 (동기)
+private func fetchFeed(for query: String) -> Result<RssFeed, Error> {
+    let engine = NaverSearch(query: query, maxLength: maxLength)
     do {
-        let fetched = try await engine.fetch()
+        let fetched = try engine.fetch()  // 동기 호출
         return .success(fetched)
     } catch {
+        Log("fetch query: \(query) -> \(engine.urlComponents.url?.absoluteString ?? "")", tag: "❌", depth: 1)
+        Log("fetch error: \(error)", tag: "❌", depth: 1)
         return .failure(error)
     }
 }
 
 // 결과에서 피드 추출 및 필터링
-private func extractFeeds(from results: [Result<RssFeed, Error>]) async -> [Feed] {
-    await withTaskGroup(of: [Feed].self) { group in
-        for result in results {
-            group.addTask {
-                switch result {
-                case .success(let rss): return rss.feeds.distinct().filterSimilar()
-                case .failure: return []
-                }
-            }
-        }
-        return await group.reduce(into: []) { $0 += $1 }
-    }
+private func extractFeeds(from results: [Result<RssFeed, Error>]) -> [Feed] {
+    results.compactMap { result in
+        guard case .success(let rss) = result else { return [Feed]() }
+        return rss.feeds.distinct().filterSimilar()
+    }.flatMap { $0 }
 }
 
 // 피드 병합
-private func mergeFeeds(for keywordGroup: KeywordGroup, with feeds: [Feed], from results: [Result<RssFeed, Error>]) async -> RssFeed? {
-    await withTaskGroup(of: RssFeed?.self) { group in
-        for result in results {
-            group.addTask {
-                switch result {
-                case .success(let rss):
-                    return RssFeed(
-                        title: keywordGroup.name,
-                        desc: keywordGroup.keywords.joined(separator: ", "),
-                        link: rss.link,
-                        updated: rss.updated,
-                        author: "\(RSSType.Integration)",
-                        feeds: feeds,
-                        type: .Integration
-                    )
-                case .failure:
-                    return nil
-                }
-            }
-        }
-        
-        // compactMap으로 옵셔널 제거 후 first로 첫 번째 값을 반환
-        let merged = await group.reduce(into: [RssFeed]()) { partialResult, rssFeed in
-            if let rssFeed = rssFeed {
-                partialResult.append(rssFeed)
-            }
-        }
-        return merged.first
+private func mergeFeeds(for keywordGroup: KeywordGroup, with feeds: [Feed], from results: [Result<RssFeed, Error>]) -> RssFeed? {
+    for case .success(let rss) in results {
+        return RssFeed(
+            title: keywordGroup.name,
+            desc: keywordGroup.keywords.joined(separator: ", "),
+            link: rss.link,
+            updated: rss.updated,
+            author: "\(RSSType.Integration)",
+            feeds: feeds,
+            type: .Integration
+        )
     }
+    return nil
 }
 
 // 병합된 피드 발행
-private func publishFeedIfNeeded(_ rssFeed: RssFeed?, for keywordGroup: KeywordGroup) async {
+private func publishFeedIfNeeded(_ rssFeed: RssFeed?, for keywordGroup: KeywordGroup) {
     guard let rssFeed = rssFeed else { return }
-
-    print("\n")
-    print("\(keywordGroup.name) feeds: \(rssFeed.feeds.count)")
+    
+    Log("result: \(rssFeed.feeds.count) feeds", tag: "🧲", depth: 1)
     
     let publisher = XMLPublisher(rssFeed: rssFeed, key: keywordGroup.name)
     do {
-        try await publisher.publish()
+        try publisher.publish()
     } catch {
-        print("publish error: \(error)")
+        Log("publish error: \(error)", tag: "❌")
     }
 }
 
-let dispatchGroup = DispatchGroup()
-
+// 동기적으로 피드 가져오기 (DispatchGroup 사용)
 func fetchFeedsSync(for keywordGroup: KeywordGroup) {
     dispatchGroup.enter()
-    Task {
-        await withCheckedContinuation { continuation in
-            Task {
-                await fetchFeeds(for: keywordGroup)
-                continuation.resume()  // 모든 작업 완료 후 그룹에서 나감
-            }
-        }
-        dispatchGroup.leave()  // 여기서 호출 (완전히 끝난 후)
+    dispatchQueue.sync {
+        print("will enter")
+        fetchFeeds(for: keywordGroup)
+        print("will leave")
+        dispatchGroup.leave()
     }
 }
 
+// 모든 키워드 그룹에 대해 피드 가져오기 (순차적 실행)
 for keywordGroup in keywordGroups {
     fetchFeedsSync(for: keywordGroup)
 }
 
-// 모든 비동기 작업이 끝날 때까지 대기
+// 모든 작업이 완료될 때까지 대기
 dispatchGroup.notify(queue: .main) {
     print("All feeds fetched. Exiting program.")
-    exit(0)
+    CFRunLoopStop(CFRunLoopGetMain())  // RunLoop 종료
 }
 
-RunLoop.main.run()
+// RunLoop 유지 (종료될 때까지 유지)
+CFRunLoopRun()

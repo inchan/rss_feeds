@@ -17,6 +17,8 @@ enum NetworkError: Error {
 protocol Fetchable {
     func fetch() async throws -> RssFeed
     var decoder: DataDecodable { get }
+    var query: String { get set }
+    var maxLength: Int { get }
 }
 
 protocol HTTPGetFetchable: Fetchable {
@@ -34,8 +36,7 @@ extension HTTPGetFetchable {
     var headers: [String: String] { [:] }
     var decoder: DataDecodable { JSONDataDecoder() }
     
-    @MainActor
-    func fetch() async throws -> RssFeed {
+    func fetch() throws -> RssFeed {
         guard let url = urlComponents.url else {
             throw NetworkError.invalidURL
         }
@@ -46,19 +47,38 @@ extension HTTPGetFetchable {
         request.timeoutInterval = 30
         request.allHTTPHeaderFields = ["Content-Type": "application/json"] // 헤더 설정
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        // 세마포어 생성 (초기값 0)
+        let semaphore = DispatchSemaphore(value: 0)
         
-        // 응답 검증
+        var data: Data?
+        var response: URLResponse?
+        var error: Error?
+        
+        // 비동기 요청을 동기적으로 처리
+        URLSession.shared.dataTask(with: request) { (responseData, urlResponse, responseError) in
+            data = responseData
+            response = urlResponse
+            error = responseError
+            semaphore.signal()  // 요청 완료 후 세마포어 신호
+        }.resume()
+        
+        // 요청이 완료될 때까지 대기 (최대 30초)
+        _ = semaphore.wait(timeout: .now() + 30)
+
+        guard error == nil else {
+            throw NetworkError.invalidResponse
+        }
+        
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
             throw NetworkError.invalidResponse
         }
         
-        guard !data.isEmpty else {
+        guard let d = data, d.isEmpty == false else {
             throw NetworkError.noData
         }
         
         do {
-            let rssFeed = try decoder.decode(data: data)
+            let rssFeed = try decoder.decode(data: d)
             successLog(request: request, rssFeed: rssFeed)
             return rssFeed
         } catch {
@@ -69,7 +89,12 @@ extension HTTPGetFetchable {
     func successLog(request: URLRequest, rssFeed: RssFeed) {
         if let url = request.url?.absoluteString {
             let feedCount = String(format: "%02d", rssFeed.feeds.count)
-            print("[REQ] \(rssFeed.title) <\(feedCount)> -> \(url)")
+            var str = "[\(query)] <\(feedCount)>"
+            while str.count < (maxLength + 5) {
+                str += " "
+            }
+            str += ": \(url)"
+            Log(str, tag: "🚀", depth: 1)
         }
     }
 }
