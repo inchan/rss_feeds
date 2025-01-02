@@ -53,28 +53,24 @@ jobs:
           git checkout -b publish
         fi
         
-        # Feeds 디렉터리 파일을 덮어쓰기 및 추가 (기존 파일 삭제 없음)
-        if [ -d "Feeds" ]; then
-            # .xml과 .md 파일만 남기고 나머지는 삭제 (단, .git 및 README.md 제외)
-            rsync -av --include='*.xml' --include='*.md' \
-                     --exclude='.git/' --exclude='README.md' --exclude='*' \
-                     --delete Feeds/ .  
-            
-            # .git 및 README.md를 제외하고 .xml, .md 외의 파일 삭제
-            find . -type f ! -name '*.xml' ! -name '*.md' ! -name 'README.md' -not -path './.git/*' -delete
-            
-            # .git 디렉터리와 README.md 보호
-            git add *.xml *.md README.md
+        # .xml과 .md 파일만 남기고 나머지 파일 삭제 (.git 및 README.md는 제외)
+        find . -type f ! -name '*.xml' ! -name '*.md' ! -name 'README.md' -not -path './.git/*' -delete
         
-            if [ -n "$(git diff --cached)" ]; then
-                git commit -m "🤖 RSS Feed 및 README.md 업데이트 (자동 커밋)"
-                
-                # 강제로 푸시 (충돌 방지)
-                git push origin publish --force
-            else
-                echo "변경 사항 없음"
-            fi
+        # Feeds 디렉터리에서 .xml, .md 파일 복사 (덮어쓰기)
+        if [ -d "Feeds" ]; then
+            cp Feeds/*.xml . 2>/dev/null || true  # .xml 복사
+            cp Feeds/*.md . 2>/dev/null || true   # .md 복사
+        fi
+        
+        # .xml과 .md 파일만 스테이징
+        git add *.xml *.md README.md
+        
+        # 커밋 및 푸시
+        if [ -n "$(git diff --cached)" ]; then
+            git commit -m "🤖 RSS Feed 및 README.md 업데이트 (자동 커밋)"
             
+            # 강제로 푸시 (충돌 방지)
+            git push origin publish --force
         else
-            echo "'Feeds' 폴더가 존재하지 않습니다. 복사 작업을 건너뜁니다."
+            echo "변경 사항 없음"
         fi
