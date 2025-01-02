@@ -41,7 +41,7 @@ jobs:
         
         cat README.md
 
-    - name: publish 브랜치로 README.md 및 변경된 파일 푸시 (덮어쓰기)
+    - name: publish 브랜치로 README.md 및 변경된 파일 푸시 (기존 파일 유지, 새 파일 추가)
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
@@ -53,9 +53,9 @@ jobs:
           git checkout -b publish
         fi
         
-        # Feeds 디렉터리 파일을 현재 디렉터리로 덮어쓰기
+        # Feeds 디렉터리 파일을 덮어쓰기 및 추가 (기존 파일 삭제 없음)
         if [ -d "Feeds" ]; then
-            cp -r Feeds/* .  # 디렉터리 내 파일을 현재 디렉터리에 복사 (덮어쓰기)
+            rsync -av Feeds/ .  # 모든 파일 덮어쓰기 (기존 파일 유지, 새로운 파일 추가)
             
             git add *.xml README.md
         
