@@ -24,6 +24,8 @@ struct KeywordGroup {
 
 let keywordGroups: [KeywordGroup] = [
     KeywordGroup(name: "중곡개발", keywords: [
+        "중곡 개발",
+        "중곡 재개발",
         "중곡3동 개발",
         "중곡3동 재개발",
         "중곡역 개발",
