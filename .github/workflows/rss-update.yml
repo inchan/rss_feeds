@@ -55,13 +55,15 @@ jobs:
         
         # Feeds 디렉터리 파일을 덮어쓰기 및 추가 (기존 파일 삭제 없음)
         if [ -d "Feeds" ]; then
-            # .xml과 .md 파일만 남기고 나머지는 삭제
-            rsync -av --include='*.xml' --include='*.md' --exclude='*' --delete Feeds/ .  
+            # .xml과 .md 파일만 남기고 나머지는 삭제 (단, .git 및 README.md 제외)
+            rsync -av --include='*.xml' --include='*.md' \
+                     --exclude='.git' --exclude='README.md' --exclude='*' \
+                     --delete Feeds/ .  
             
-            # 루트 디렉터리에서 .xml, .md 외의 파일 삭제
-            find . -type f ! -name '*.xml' ! -name '*.md' -delete
+            # 루트 디렉터리에서 .xml, .md 외의 파일 삭제 (단, .git 및 README.md 제외)
+            find . -type f ! -name '*.xml' ! -name '*.md' ! -name 'README.md' -delete
             
-            git add *.xml *.md  # .xml과 .md 파일만 스테이징
+            git add *.xml *.md README.md  # .xml과 .md, README.md 파일만 스테이징
         
             if [ -n "$(git diff --cached)" ]; then
                 git commit -m "🤖 RSS Feed 및 README.md 업데이트 (자동 커밋)"
