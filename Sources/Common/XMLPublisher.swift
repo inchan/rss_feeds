@@ -12,18 +12,18 @@ struct XMLPublisher {
     let rssFeed: RssFeed
     let key: String
     
-    func publish() throws {
+    func publish() async throws {
         if rssFeed.feeds.isEmpty {
             guard var oldRssFeed = try XMLLoader(key: key).fromLocalFile() else { return }
             oldRssFeed.updated = Date()
-            try internalPublish(rssFeed: oldRssFeed)
+            try await internalPublish(rssFeed: oldRssFeed)
         }
         else {
-            try internalPublish(rssFeed: rssFeed)
+            try await internalPublish(rssFeed: rssFeed)
         }
     }
     
-    private func internalPublish(rssFeed: RssFeed) throws {
+    private func internalPublish(rssFeed: RssFeed) async throws {
         if #available(macOS 13.0, *) {
             let fileManager = FileManager.default
             let dirPath = Path.writeDirPath()

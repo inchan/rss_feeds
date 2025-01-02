@@ -23,7 +23,7 @@ struct KeywordGroup {
 }
 
 let keywordGroups: [KeywordGroup] = [
-    KeywordGroup(name: "중곡개발", keywords: [
+    KeywordGroup(name: "중곡동", keywords: [
         "중곡 개발",
         "중곡 재개발",
         "중곡3동 개발",
@@ -50,80 +50,103 @@ let keywordGroups: [KeywordGroup] = [
 func fetchFeeds(for keywordGroup: KeywordGroup) async {
     let searchQueries = keywordGroup.keywords.flatMap { $0.toSearchQuries }
 
+    logGroupInfo(keywordGroup, queries: searchQueries)
+
+    let fetchedResults = await fetchAllFeeds(for: searchQueries)
+
+    let feeds = await extractFeeds(from: fetchedResults)
+    let mergedFeed = await mergeFeeds(for: keywordGroup, with: feeds, from: fetchedResults)
+
+    await publishFeedIfNeeded(mergedFeed, for: keywordGroup)
+}
+
+// 그룹 정보 출력
+private func logGroupInfo(_ keywordGroup: KeywordGroup, queries: [String]) {
     print("\n")
     print("group name: \(keywordGroup.name)")
-    print("-> Keywords : \n\(searchQueries)")
+    print("-> Keywords : \n\(queries)")
+}
 
-//    do {
-//        let old = try XMLLoader(key: keywordGroup.name).fromLocalFile()
-//        if let old = old {
-//            print("old \(old.title): items: \(old.feeds.count)\n")
-//        }
-//    } catch {
-//        print("Failed to load old XML: \(error)")
-//    }
+// 모든 피드를 병렬로 가져옴
+private func fetchAllFeeds(for queries: [String]) async -> [Result<RssFeed, Error>] {
+    await withTaskGroup(of: Result<RssFeed, Error>.self) { group in
+        for query in queries {
+            group.addTask { await fetchFeed(for: query) }
+        }
+        return await group.reduce(into: []) { $0.append($1) }
+    }
+}
 
-    // 비동기 병렬 처리
-    let fetchedResults = await withTaskGroup(of: Result<RssFeed, Error>.self) { group in
-        for query in searchQueries {
+// 개별 피드 가져오기
+private func fetchFeed(for query: String) async -> Result<RssFeed, Error> {
+    let engine = NaverSearch(query: query)
+    do {
+        let fetched = try await engine.fetch()
+        return .success(fetched)
+    } catch {
+        return .failure(error)
+    }
+}
+
+// 결과에서 피드 추출 및 필터링
+private func extractFeeds(from results: [Result<RssFeed, Error>]) async -> [Feed] {
+    await withTaskGroup(of: [Feed].self) { group in
+        for result in results {
             group.addTask {
-                let engine = NaverSearch(query: query)
-                do {
-                    let fetched = try await engine.fetch()
-                    return .success(fetched)
-                } catch {
-                    return .failure(error)
+                switch result {
+                case .success(let rss): return rss.feeds.distinct().filterSimilar()
+                case .failure: return []
                 }
             }
         }
-
-        var results: [Result<RssFeed, Error>] = []
-        for await result in group {
-            results.append(result)
-        }
-        return results
+        return await group.reduce(into: []) { $0 += $1 }
     }
+}
 
-    let feeds = fetchedResults
-        .compactMap { result in
-            switch result {
-            case .success(let rss): return rss.feeds
-            case .failure: return []
+// 피드 병합
+private func mergeFeeds(for keywordGroup: KeywordGroup, with feeds: [Feed], from results: [Result<RssFeed, Error>]) async -> RssFeed? {
+    await withTaskGroup(of: RssFeed?.self) { group in
+        for result in results {
+            group.addTask {
+                switch result {
+                case .success(let rss):
+                    return RssFeed(
+                        title: keywordGroup.name,
+                        desc: keywordGroup.keywords.joined(separator: ", "),
+                        link: rss.link,
+                        updated: rss.updated,
+                        author: "\(RSSType.Integration)",
+                        feeds: feeds,
+                        type: .Integration
+                    )
+                case .failure:
+                    return nil
+                }
             }
         }
-        .flatMap { $0 }
-        .distinct()
-        .filterSimilar()
-
-    let merged = fetchedResults
-        .compactMap { result in
-            switch result {
-            case .success(let rss): return rss
-            case .failure: return nil
+        
+        // compactMap으로 옵셔널 제거 후 first로 첫 번째 값을 반환
+        let merged = await group.reduce(into: [RssFeed]()) { partialResult, rssFeed in
+            if let rssFeed = rssFeed {
+                partialResult.append(rssFeed)
             }
         }
-        .first
-        .map { rssFeed in
-            RssFeed(
-                title: keywordGroup.name,
-                desc: keywordGroup.keywords.joined(separator: ", "),
-                link: rssFeed.link,
-                updated: rssFeed.updated,
-                author: "\(RSSType.Integration)",
-                feeds: feeds,
-                type: .Integration
-            )
-        }
+        return merged.first
+    }
+}
 
-    if let merged = merged {
-        print("\n")
-        print("\(keywordGroup.name) feeds: \(merged.feeds.count)")
-        let publisher = XMLPublisher(rssFeed: merged, key: keywordGroup.name)
-        do {
-            try publisher.publish()
-        } catch {
-            print("publish error: \(error)")
-        }
+// 병합된 피드 발행
+private func publishFeedIfNeeded(_ rssFeed: RssFeed?, for keywordGroup: KeywordGroup) async {
+    guard let rssFeed = rssFeed else { return }
+
+    print("\n")
+    print("\(keywordGroup.name) feeds: \(rssFeed.feeds.count)")
+    
+    let publisher = XMLPublisher(rssFeed: rssFeed, key: keywordGroup.name)
+    do {
+        try await publisher.publish()
+    } catch {
+        print("publish error: \(error)")
     }
 }
 
