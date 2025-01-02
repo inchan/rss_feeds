@@ -4,8 +4,8 @@ on:
   push:
     branches: [ "master" ]
   schedule:
-    - cron: '0 */2 * * *'  # 2시간마다 실행
-  workflow_dispatch:       # 수동 실행 옵션
+    - cron: '0 7-23/2 * * *'    # 7시부터 23시까지 2시간마다 실행
+  workflow_dispatch:            # 수동 실행 옵션
 
 jobs:
   update-and-commit:
@@ -20,7 +20,7 @@ jobs:
 
     - name: README.md 업데이트 (XML 파일 목록 및 빌드 시간)
       run: |
-        echo "# RSS Feed List" > README.md
+        echo "# [RSS Feed List](https://inchan.github.io/RssFeeds/)" > README.md
         echo "" >> README.md
         echo "이 저장소는 RSS 피드를 자동으로 업데이트하고 관리합니다." >> README.md
         echo "" >> README.md
@@ -30,7 +30,8 @@ jobs:
         # Feeds 디렉터리에서 XML 파일 리스트업 (GitHub Pages URL)
         BASE_URL="https://inchan.github.io/RssFeeds"
         for file in Feeds/*.xml; do
-          echo "- [$(basename "$file")](${BASE_URL}/$file)" >> README.md
+            filename=$(basename "$file")  # 파일 이름만 추출 (Feeds/ 제거)
+            echo "- [$filename](${BASE_URL}/$filename)" >> README.md
         done
         
         # 마지막 빌드 시간 추가
@@ -39,15 +40,6 @@ jobs:
         echo "\`$(date "+%Y-%m-%d %H:%M:%S")\`" >> README.md
         
         cat README.md
-
-    - name: Feeds/ 하위 파일 루트로 복사
-      run: |
-        # 루트 디렉터리에 Feeds 하위 파일 복사
-        for file in Feeds/*; do
-          cp "$file" "./$(basename $file)"
-        done
-        
-        ls -l
 
     - name: publish 브랜치로 README.md 및 변경된 파일 푸시 (강제 덮어쓰기)
       run: |
@@ -63,16 +55,24 @@ jobs:
           git rm -rf .
         fi
         
-        # Feeds 하위 파일을 루트로 복사
-        for file in Feeds/*; do
-          cp "$file" "./$(basename $file)"
-        done
+        if [ -d "Feeds" ]; then
+        # Feeds 하위 파일을 현재 디렉터리(루트)로 복사
+            for file in Feeds/*; do
+                cp "$file" "./$(basename "$file")"
+                echo "Copied $file"
+            done
+            
+            git add *.xml README.md
         
-        git add *.xml README.md
-        
-        if [ -n "$(git diff --cached)" ]; then
-          git commit -m "🤖 RSS Feed 및 README.md 업데이트 (자동 커밋)"
-          git push origin publish --force  # 강제 푸시
+            if [ -n "$(git diff --cached)" ]; then
+                git commit -m "🤖 RSS Feed 및 README.md 업데이트 (자동 커밋)"
+                git push origin publish --force  # 강제 푸시
+            else
+                echo "변경 사항 없음"
+            fi
+            
         else
-          echo "변경 사항 없음"
+            echo "'Feeds' folder does not exist. Skipping copy."
         fi
+        
+        
