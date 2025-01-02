@@ -105,8 +105,8 @@ func fetchFeeds(for keywordGroup: KeywordGroup) async {
         .first
         .map { rssFeed in
             RssFeed(
-                title: rssFeed.title,
-                desc: rssFeed.desc,
+                title: keywordGroup.name,
+                desc: keywordGroup.keywords.joined(separator: ", "),
                 link: rssFeed.link,
                 updated: rssFeed.updated,
                 author: "\(RSSType.Integration)",
