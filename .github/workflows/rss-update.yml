@@ -55,7 +55,11 @@ jobs:
         
         # Feeds 디렉터리 파일을 덮어쓰기 및 추가 (기존 파일 삭제 없음)
         if [ -d "Feeds" ]; then
-            rsync -av --include='*.xml' --include='*.md' --exclude='*' Feeds/ .  # .xml과 .md만 복사
+            # .xml과 .md 파일만 남기고 나머지는 삭제
+            rsync -av --include='*.xml' --include='*.md' --exclude='*' --delete Feeds/ .  
+            
+            # 루트 디렉터리에서 .xml, .md 외의 파일 삭제
+            find . -type f ! -name '*.xml' ! -name '*.md' -delete
             
             git add *.xml *.md  # .xml과 .md 파일만 스테이징
         
