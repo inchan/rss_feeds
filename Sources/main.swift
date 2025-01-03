@@ -87,8 +87,8 @@ private func fetchFeed(for query: String) -> Result<RssFeed, Error> {
 private func extractFeeds(from results: [Result<RssFeed, Error>]) -> [Feed] {
     results.compactMap { result in
         guard case .success(let rss) = result else { return [Feed]() }
-        return rss.feeds.distinct().filterSimilar()
-    }.flatMap { $0 }
+        return rss.feeds
+    }.flatMap { $0 }.distinct().filterSimilar()
 }
 
 // 피드 병합
