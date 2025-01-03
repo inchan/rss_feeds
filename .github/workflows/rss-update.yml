@@ -4,12 +4,12 @@ on:
   push:
     branches: [ "master" ]
   schedule:
-    - cron: '0 7-23/2 * * *'  # 7시부터 23시까지 2시간마다 실행
-  workflow_dispatch:  # 수동 실행 옵션
+    - cron: '0 7-23/2 * * *'    # 7시부터 23시까지 2시간마다 실행
+  workflow_dispatch:            # 수동 실행 옵션
 
 jobs:
   update-and-commit:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     
     steps:
     - name: 리포지토리 체크아웃
@@ -18,7 +18,7 @@ jobs:
     - name: RSS 업데이트 실행
       run: swift run
 
-    - name: README.md 및 XML 파일 업데이트
+    - name: README.md 업데이트 (XML 파일 목록 및 빌드 시간)
       run: |
         echo "# [RSS Feed List](https://inchan.github.io/RssFeeds/)" > README.md
         echo "" >> README.md
@@ -27,41 +27,52 @@ jobs:
         echo "## RSS Feeds" >> README.md
         echo "" >> README.md
         
+        # Feeds 디렉터리에서 XML 파일 리스트업 (GitHub Pages URL)
         BASE_URL="https://inchan.github.io/RssFeeds"
         for file in Feeds/*.xml; do
-          filename=$(basename "$file")
-          echo "- [$filename](${BASE_URL}/$filename)" >> README.md
+            filename=$(basename "$file")  # 파일 이름만 추출 (Feeds/ 제거)
+            echo "- [$filename](${BASE_URL}/$filename)" >> README.md
         done
         
+        # 마지막 빌드 시간 추가
         echo "" >> README.md
         echo "## 마지막 빌드 시간" >> README.md
         echo "\`$(date "+%Y-%m-%d %H:%M:%S")\`" >> README.md
+        
         cat README.md
 
-    - name: publish 브랜치에 파일 업데이트 및 푸시
+    - name: publish 브랜치로 README.md 및 변경된 파일 푸시 (강제 덮어쓰기)
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-
+        
         # publish 브랜치 체크아웃 (없으면 생성)
         if git show-ref --verify --quiet refs/heads/publish; then
           git checkout publish
+          git reset --hard origin/main  # 리모트 publish 초기화
         else
-          git checkout -b publish
+          git checkout --orphan publish
+          git rm -rf .
         fi
         
-        # .git 디렉터리를 제외하고 모든 파일 삭제
-        find . -mindepth 1 -not -name '.git' -exec rm -rf {} +
+        if [ -d "Feeds" ]; then
+        # Feeds 하위 파일을 현재 디렉터리(루트)로 복사
+            for file in Feeds/*; do
+                cp "$file" "./$(basename "$file")"
+                echo "Copied $file"
+            done
+            
+            git add *.xml README.md
         
-        # Feeds 디렉터리에서 .xml 및 .md 파일 복사
-        cp Feeds/*.xml . 2>/dev/null || true
-        cp Feeds/*.md . 2>/dev/null || true
-        
-        # 스테이징 및 커밋
-        git add *.xml *.md
-        if git diff --cached --quiet; then
-          echo "변경 사항 없음"
+            if [ -n "$(git diff --cached)" ]; then
+                git commit -m "🤖 RSS Feed 및 README.md 업데이트 (자동 커밋)"
+                git push origin publish --force  # 강제 푸시
+            else
+                echo "변경 사항 없음"
+            fi
+            
         else
-          git commit -m "🤖 RSS Feed 및 README.md 업데이트 (자동 커밋)"
-          git push origin publish --force
+            echo "'Feeds' folder does not exist. Skipping copy."
         fi
+        
+        
