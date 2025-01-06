@@ -43,10 +43,17 @@ let keywordGroups: [KeywordGroup] = [
         "캐시 우드",
         "cash wood",
     ]),
-    KeywordGroup(name: "3기신도시")
+    KeywordGroup(name: "3기신도시"),
+    KeywordGroup(name: "양자컴퓨터", keywords: [
+        "양자컴퓨터",
+        "리게티컴퓨팅",
+        "아이온큐",
+        "퀀텀컴퓨팅",
+        "윌로우칩"
+    ]),
 ]
 
-let maxLength = keywordGroups.flatMap { $0.keywords }.map { $0.count }.max() ?? 0
+let maxLength = max(16, (keywordGroups.flatMap { $0.keywords }.map { $0.count }.max() ?? 0 + 2))
 
 let dispatchQueue = DispatchQueue(label: "com.feed.fetchQueue")  // 직렬 큐 생성
 let dispatchGroup = DispatchGroup()
